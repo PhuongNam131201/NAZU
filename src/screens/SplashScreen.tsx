@@ -1,28 +1,38 @@
 import React from 'react';
-import {ActivityIndicator, Image, ImageBackground} from 'react-native';
-import {appInfo} from '../constants/appinfos';
+import {ActivityIndicator, Image, ImageBackground, View} from 'react-native';
+import {TextComponent} from '../components';
 import SpaceComponent from '../components/SpaceComponent';
 import {appColors} from '../constants/appColors';
+import {appInfo} from '../constants/appinfos';
 
 const SplashScreen = () => {
   return (
     <ImageBackground
-      source={require('../assets/images/green.png')}
       style={{
+        backgroundColor: appColors.white,
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
       }}
       imageStyle={{flex: 1}}>
       <Image
-        source={require('../assets/images/avatar.png')}
+        source={require('../assets/images/1.png')}
         style={{
-          width: appInfo.sizes.WIDTH * 0.7,
+          width: appInfo.sizes.WIDTH * 1,
           resizeMode: 'contain',
+          marginTop: -50,
         }}
       />
-      <SpaceComponent height={16} />
-      <ActivityIndicator color={appColors.gray} size={22} />
+      <View>
+        <TextComponent
+          text="Tìm phòng trọ gần bạn"
+          size={18}
+          styles={{marginTop: -50}}
+          title={true}
+        />
+      </View>
+      <SpaceComponent height={30} />
+      <ActivityIndicator color={appColors.green} size={22} />
     </ImageBackground>
   );
 };
