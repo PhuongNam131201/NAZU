@@ -37,7 +37,7 @@ const App = () => {
         backgroundColor="transparent"
         translucent
       />
-      {!isShowSplash ? (
+      {isShowSplash ? (
         <SplashScreen />
       ) : (
         <NavigationContainer>
