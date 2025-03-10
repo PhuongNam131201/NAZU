@@ -14,7 +14,7 @@ import ContainerComponent from '../../components/ContainerComponent';
 import {appColors} from '../../constants/appColors';
 import {fontFamilies} from '../../constants/fontFamilies';
 import SocialLogin from './components/SocialLogin';
-const LoginScreen = () => {
+const LoginScreen = ({navigation}: any) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isRemember, setIsRemember] = useState(true);
@@ -70,7 +70,7 @@ const LoginScreen = () => {
           </RowComponent>
           <ButtonComponent
             text="Quên mật khẩu?"
-            // onPress={() => navigation.navigate('ForgotPassword')}
+            onPress={() => navigation.navigate('ForgotPassword')}
             type="text"
           />
         </RowComponent>
@@ -86,7 +86,7 @@ const LoginScreen = () => {
           <ButtonComponent
             text=" Đăng ký"
             type="link"
-            // onPress={() => navigation.navigate('Register')}
+            onPress={() => navigation.navigate('SignUpScreen')}
           />
         </RowComponent>
       </SectionComponent>

@@ -1,5 +1,4 @@
 import {useNavigation} from '@react-navigation/native';
-import {ArrowLeft} from 'iconsax-react-native';
 import React, {ReactNode} from 'react';
 import {
   ImageBackground,
@@ -8,6 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import {RowComponent, TextComponent} from '.';
 import {appColors} from '../constants/appColors';
 import {fontFamilies} from '../constants/fontFamilies';
@@ -42,7 +42,11 @@ const ContainerComponent = (props: Props) => {
               <TouchableOpacity
                 onPress={() => navigation.goBack()}
                 style={{marginRight: 12}}>
-                <ArrowLeft size={24} color={appColors.text} />
+                <Ionicons
+                  name="chevron-back"
+                  size={22}
+                  color={appColors.text}
+                />
               </TouchableOpacity>
             )}
             {title ? (
