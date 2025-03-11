@@ -11,4 +11,5 @@ export const appColors = {
     link: '#5669FF',
     danger: '#e74c3c',
     primary:'#33CC33',
+    tomato:'#ff6348'
   };
