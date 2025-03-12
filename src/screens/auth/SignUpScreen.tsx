@@ -26,7 +26,6 @@ const SignUpScreen = ({navigation}: any) => {
   const [values, setValues] = useState(initValue);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<any>();
-  const [isDisable, setIsDisable] = useState(true);
 
   useEffect(() => {
     if (values.email || values.password || values.username) {
@@ -50,7 +49,11 @@ const SignUpScreen = ({navigation}: any) => {
         try {
           const res = await authenticationAPI.HandleAuthentication(
             '/register',
-            values,
+            {
+              fullname: values.username,
+              email,
+              password,
+            },
             'post',
           );
           console.log('res', res);
