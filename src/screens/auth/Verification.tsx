@@ -211,7 +211,7 @@ const Verification = ({navigation, route}: any) => {
         <ButtonComponent
           disable={newCode.length !== 6}
           onPress={handleVerification}
-          text="Continue"
+          text="Tiếp tục"
           type="primary"
           iconFlex="right"
         />
