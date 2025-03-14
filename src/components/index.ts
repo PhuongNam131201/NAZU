@@ -6,5 +6,11 @@ import SectionComponent from './SectionComponent';
 import RowComponent from './RowComponent';
 import ContainerComponent from './ContainerComponent';
 export {
-  SpaceComponent, TextComponent, ButtonComponent, InputComponent, SectionComponent, RowComponent, ContainerComponent,
+  SpaceComponent,
+  TextComponent,
+  ButtonComponent,
+  InputComponent,
+  SectionComponent,
+  RowComponent,
+  ContainerComponent,
 };

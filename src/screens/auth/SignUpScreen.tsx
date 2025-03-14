@@ -1,24 +1,28 @@
 import React, {useEffect, useState} from 'react';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import Feather from 'react-native-vector-icons/Feather';
+import {useDispatch} from 'react-redux';
+import authenticationAPI from '../../api/authApi';
 import {
   ButtonComponent,
+  ContainerComponent,
   InputComponent,
   RowComponent,
   SectionComponent,
   SpaceComponent,
   TextComponent,
 } from '../../components';
-import ContainerComponent from '../../components/ContainerComponent';
 import {appColors} from '../../constants/appColors';
 import {fontFamilies} from '../../constants/fontFamilies';
-import SocialLogin from './components/SocialLogin';
 import {LoadingModal} from '../../modals';
-import authenticationAPI from '../../api/authApi';
 import {Validate} from '../../utils/validate';
-import {useDispatch} from 'react-redux';
-import {addAuth} from '../../redux/reducers/authReducer';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import SocialLogin from './components/SocialLogin';
+interface ErrorMessages {
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
+
 const initValue = {
   username: '',
   email: '',
@@ -29,12 +33,25 @@ const SignUpScreen = ({navigation}: any) => {
   const [values, setValues] = useState(initValue);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<any>();
+  const [isDisable, setIsDisable] = useState(true);
   const dispatch = useDispatch();
   useEffect(() => {
-    if (values.email || values.password || values.username) {
-      setErrorMessage('');
+    if (
+      !errorMessage ||
+      (errorMessage &&
+        (errorMessage.email ||
+          errorMessage.password ||
+          errorMessage.confirmPassword)) ||
+      !values.email ||
+      !values.password ||
+      !values.confirmPassword
+    ) {
+      setIsDisable(true);
+    } else {
+      setIsDisable(false);
     }
-  }, [values.email, values.password, values.username]);
+  }, [errorMessage, values]);
+
   const handleChangeValue = (key: string, value: string) => {
     const data: any = {...values};
 
@@ -42,39 +59,61 @@ const SignUpScreen = ({navigation}: any) => {
 
     setValues(data);
   };
-  const handleRegister = async () => {
-    const {email, password, username, confirmPassword} = values;
-    const emailValidation = Validate.email(email);
-    const passwordValidation = Validate.Password(password);
-    if (email && password && username && confirmPassword) {
-      if (emailValidation && passwordValidation) {
-        setIsLoading(true);
-        try {
-          const res = await authenticationAPI.HandleAuthentication(
-            '/register',
-            {
-              fullname: values.username,
-              email,
-              password,
-            },
-            'post',
-          );
-          dispatch(addAuth(res.data));
-          await AsyncStorage.setItem('auth', JSON.stringify(res.data));
-          console.log('res', res);
-          setIsLoading(false);
-        } catch (error) {
-          console.log('error', error);
-          setIsLoading(false);
+
+  const formValidator = (key: string) => {
+    const data = {...errorMessage};
+    let message = ``;
+
+    switch (key) {
+      case 'email':
+        if (!values.email) {
+          message = `Bạn phải nhập Email!!!`;
+        } else if (!Validate.email(values.email)) {
+          message = 'Email is not invalid!!';
+        } else {
+          message = '';
         }
-      } else {
-        setErrorMessage({
-          email: 'Email không hợp lệ',
-          password: 'Mật khẩu phải có ít nhất 6 ký tự',
-        });
-      }
-    } else {
-      setErrorMessage('Vui lòng nhập đầy đủ thông tin');
+
+        break;
+
+      case 'password':
+        message = !values.password ? `Bạn hãy nhập mật khẩu!!!` : '';
+        break;
+
+      case 'confirmPassword':
+        if (!values.confirmPassword) {
+          message = 'Vui lòng nhập xác nhận mật khẩu!!';
+        } else if (values.confirmPassword !== values.password) {
+          message = 'Mật khẩu không khớp!!!';
+        } else {
+          message = '';
+        }
+
+        break;
+    }
+
+    data[`${key}`] = message;
+
+    setErrorMessage(data);
+  };
+
+  const handleRegister = async () => {
+    const api = `/verification`;
+    setIsLoading(true);
+    try {
+      const res = await authenticationAPI.HandleAuthentication(
+        api,
+        {email: values.email},
+        'post',
+      );
+      setIsLoading(false);
+      navigation.navigate('Verification', {
+        code: res.data.code,
+        ...values,
+      });
+    } catch (error) {
+      console.log(error);
+      setIsLoading(false);
     }
   };
   return (
@@ -109,6 +148,7 @@ const SignUpScreen = ({navigation}: any) => {
             // isPassword
             allowClear
             affix={<AntDesign name="mail" size={22} color={appColors.text} />}
+            onEnd={() => formValidator('email')}
           />
           <InputComponent
             value={values.password}
@@ -117,6 +157,7 @@ const SignUpScreen = ({navigation}: any) => {
             isPassword
             allowClear
             affix={<Feather name="lock" size={22} color={appColors.text} />}
+            onEnd={() => formValidator('password')}
           />
           <InputComponent
             value={values.confirmPassword}
@@ -125,6 +166,7 @@ const SignUpScreen = ({navigation}: any) => {
             isPassword
             allowClear
             affix={<Feather name="lock" size={22} color={appColors.text} />}
+            onEnd={() => formValidator('confirmPassword')}
           />
           {/* <InputComponent
           value={password}
@@ -155,6 +197,7 @@ const SignUpScreen = ({navigation}: any) => {
             text="Đăng ký"
             type="primary"
             onPress={handleRegister}
+            disable={isDisable}
           />
         </SectionComponent>
         <SocialLogin />

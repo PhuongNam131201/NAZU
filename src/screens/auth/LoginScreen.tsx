@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {Image, Switch} from 'react-native';
+import {Alert, Image, Switch} from 'react-native';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import Feather from 'react-native-vector-icons/Feather';
 import {
@@ -15,17 +15,40 @@ import {appColors} from '../../constants/appColors';
 import {fontFamilies} from '../../constants/fontFamilies';
 import SocialLogin from './components/SocialLogin';
 import authenticationAPI from '../../api/authApi';
+import {Validate} from '../../utils/validate';
+import {useDispatch} from 'react-redux';
+import {addAuth} from '../../redux/reducers/authReducer';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 const LoginScreen = ({navigation}: any) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isRemember, setIsRemember] = useState(true);
+  const dispatch = useDispatch();
   const handleLogin = async () => {
-    try {
-      const res = await authenticationAPI.HandleAuthentication(`/hello`);
-      console.log(res);
-    } catch (error) {
-      console.log(error);
+    const emailValidation = Validate.email(email);
+    if (emailValidation) {
+      try {
+        const res = await authenticationAPI.HandleAuthentication(
+          '/login',
+          {
+            email,
+            password,
+          },
+          'post',
+        );
+        dispatch(addAuth(res.data));
+
+        await AsyncStorage.setItem(
+          'auth',
+          isRemember ? JSON.stringify(res.data) : email,
+        );
+      } catch (error) {
+        console.log(error);
+      }
+    } else {
+      Alert.alert('Email không tồn tại');
     }
+
     //   const api = `http://192.168.88.163:3001/hello`;
     //   try {
     //     const res = await fetch(api, {
