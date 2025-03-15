@@ -124,7 +124,7 @@ const LoginScreen = ({navigation}: any) => {
           onPress={handleLogin}
         />
       </SectionComponent>
-      <SocialLogin />
+      {/* <SocialLogin /> */}
       <SectionComponent>
         <RowComponent justify="center">
           <TextComponent text="Bạn chưa có tài khoản?" />
