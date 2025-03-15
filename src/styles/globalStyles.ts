@@ -43,7 +43,6 @@ export const globalStyles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'flex-start',
     alignItems: 'center',
-    
   },
 
   iconContainer: {

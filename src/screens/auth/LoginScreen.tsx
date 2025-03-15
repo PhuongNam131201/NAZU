@@ -1,7 +1,10 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, {useState} from 'react';
 import {Alert, Image, Switch} from 'react-native';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import Feather from 'react-native-vector-icons/Feather';
+import {useDispatch} from 'react-redux';
+import authenticationAPI from '../../api/authApi';
 import {
   ButtonComponent,
   InputComponent,
@@ -13,12 +16,8 @@ import {
 import ContainerComponent from '../../components/ContainerComponent';
 import {appColors} from '../../constants/appColors';
 import {fontFamilies} from '../../constants/fontFamilies';
-import SocialLogin from './components/SocialLogin';
-import authenticationAPI from '../../api/authApi';
-import {Validate} from '../../utils/validate';
-import {useDispatch} from 'react-redux';
 import {addAuth} from '../../redux/reducers/authReducer';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import {Validate} from '../../utils/validate';
 const LoginScreen = ({navigation}: any) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

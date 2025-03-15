@@ -4051,6 +4051,13 @@ iconsax-react-native@^0.0.8:
   dependencies:
     prop-types "^15.7.2"
 
+iconsax-react@^0.0.8:
+  version "0.0.8"
+  resolved "https://registry.npmjs.org/iconsax-react/-/iconsax-react-0.0.8.tgz"
+  integrity sha512-l3dVk4zGtkkJHgvNYqAf0wDKqnKxXykee5/DoESGo2JvSYwaxajJUHSX2YrPRXSov8Hd8ClGFwJxCEaEjrFD1Q==
+  dependencies:
+    prop-types "^15.7.2"
+
 ieee754@^1.1.13:
   version "1.2.1"
   resolved "https://registry.npmjs.org/ieee754/-/ieee754-1.2.1.tgz"
