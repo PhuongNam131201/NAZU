@@ -61,7 +61,7 @@ const DrawerCustom = ({navigation}: any) => {
   };
 
   return (
-    <View style={[localStyles.container]}>
+    <View style={[localStyles.container, {paddingTop: 25}]}>
       <TouchableOpacity
         onPress={() => {
           navigation.closeDrawer();
@@ -76,9 +76,22 @@ const DrawerCustom = ({navigation}: any) => {
             style={[localStyles.avatar]}
           />
         )}
-
-        <TextComponent text={user.name} title size={18} />
+        <View>
+          <TextComponent text="Xin chào, " />
+          <TextComponent text={user.email} size={16} />
+        </View>
       </TouchableOpacity>
+      <TextComponent
+        text="NAZU"
+        title
+        styles={{paddingTop: 20}}
+        color={appColors.limesoap}
+      />
+      <TextComponent
+        text="Tìm phòng trọ an toàn và tiện lợi "
+        color={appColors.primary}
+        size={14}
+      />
       <FlatList
         showsVerticalScrollIndicator={false}
         data={profileMenu}

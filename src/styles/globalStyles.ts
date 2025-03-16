@@ -66,6 +66,17 @@ export const globalStyles = StyleSheet.create({
     padding: 12,
     borderRadius: 12,
     backgroundColor: appColors.white,
-    margin: 12,
+    marginHorizontal: 12,
+    marginBottom: 16,
+    marginVertical: 16,
+  },
+  cardsmail: {
+    alignItems: 'center',
+    width: 45,
+    height: 45,
+    padding: 0,
+    marginVertical: 0,
+    marginHorizontal: 0,
+    justifyContent: 'center',
   },
 });

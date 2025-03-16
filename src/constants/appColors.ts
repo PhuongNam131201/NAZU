@@ -21,4 +21,5 @@ export const appColors = {
   citymoke: '#dfe4ea',
   limesoap: '#7bed9f',
   clearchii: '#1e90ff',
+  organge: '#ffa502',
 };

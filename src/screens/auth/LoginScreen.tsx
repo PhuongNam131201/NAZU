@@ -35,6 +35,7 @@ const LoginScreen = ({navigation}: any) => {
           },
           'post',
         );
+        console.log('Dữ liệu trả về từ API:', res.data);
         dispatch(addAuth(res.data));
 
         await AsyncStorage.setItem(
