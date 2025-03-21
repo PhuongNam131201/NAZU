@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {Dimensions, Image, ImageBackground, View} from 'react-native';
 import {
   AvatarGroup,
@@ -10,7 +10,8 @@ import {
 import Icon from 'react-native-vector-icons/Ionicons';
 import {appColors} from '../constants/appColors';
 import {globalStyles} from '../styles/globalStyles';
-
+import {useNavigation} from '@react-navigation/native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 interface Props {
   item: any;
   type: 'list' | 'card';
@@ -18,11 +19,13 @@ interface Props {
 
 const PlaceItem = (props: Props) => {
   const {item, type} = props;
-
+  const navigation: any = useNavigation();
+  const [isFavorite, setIsFavorite] = useState(false);
   return type === 'card' ? (
     <CardComponent
+      isShadow
       styles={{width: Dimensions.get('window').width * 0.6}}
-      onPress={() => {}}>
+      onPress={() => navigation.navigate('PlaceDetail')}>
       <ImageBackground
         style={{flex: 1, marginBottom: 12, height: 131, padding: 10}}
         source={require('../assets/images/1.png')}
@@ -38,10 +41,14 @@ const PlaceItem = (props: Props) => {
             <TextComponent text="12" />
           </CardComponent>
           <CardComponent
-            bgColor={appColors.citymoke}
-            styles={[globalStyles.cardsmail]}>
-            <TextComponent text="14" />
-            <TextComponent text="12" />
+            styles={[globalStyles.cardsmail]}
+            bgColor={appColors.citymoke}>
+            <Ionicons
+              name={isFavorite ? 'heart' : 'heart-outline'}
+              size={24}
+              color={isFavorite ? appColors.tomato : appColors.white}
+              onPress={() => setIsFavorite(!isFavorite)}
+            />
           </CardComponent>
         </RowComponent>
       </ImageBackground>

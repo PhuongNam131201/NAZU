@@ -8,7 +8,7 @@ import PlaceScreen from './screens/place/PlaceScreen';
 import MapScreen from './screens/map/MapScreen';
 import ProfileScreen from './screens/profile/ProfileScreen';
 import AddNewScreen from './screens/AddNewScreen';
-
+import PlaceDetail from './screens/place/PlaceDetail';
 export {
   HomeScreen,
   LoginScreen,
@@ -20,4 +20,5 @@ export {
   MapScreen,
   ProfileScreen,
   AddNewScreen,
+  PlaceDetail,
 };

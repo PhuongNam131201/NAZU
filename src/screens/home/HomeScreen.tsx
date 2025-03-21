@@ -1,7 +1,8 @@
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   Button,
   FlatList,
+  Image,
   Platform,
   SafeAreaView,
   ScrollView,
@@ -31,9 +32,35 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 
 import {fontFamilies} from '../../constants/fontFamilies';
 import {RoomModel} from '../../models/RoomModel';
+import Geolocation from '@react-native-community/geolocation';
+import axios from 'axios';
+import {Address, AddressModel} from '../../models/AddressModel';
 const HomeScreen = ({navigation}: any) => {
   const dispatch = useDispatch();
   const auth = useSelector(authSelector);
+  const [currenLocation, setCurrenLocation] = useState<AddressModel>();
+  useEffect(() => {
+    Geolocation.getCurrentPosition(position => {
+      if (position.coords) {
+        reverseGeoCode({
+          lat: position.coords.latitude,
+          long: position.coords.longitude,
+        });
+      }
+    });
+  }, []);
+  const reverseGeoCode = async ({lat, long}: {lat: number; long: number}) => {
+    const api = `https://revgeocode.search.hereapi.com/v1/revgeocode?at=${lat},${long}&lang=vi-VI&apiKey=6dVvU0jSlISYFm251QMhjRjMAwHvOllgnQhW_Sq3PBE`;
+    try {
+      const res = await axios(api);
+      if (res && res.status == 200 && res.data) {
+        const items = res.data.items;
+        setCurrenLocation(items[0]);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
   const itemPlace = {
     id: 'room_001',
     ownerId: '1',
@@ -46,8 +73,7 @@ const HomeScreen = ({navigation}: any) => {
       district: 'Thủ Dầu Một',
       ward: 'Phú Hòa',
     },
-    imageUrl:
-      'https://example.com/image.jpghttps://www.bing.com/images/search?view=detailV2&ccid=CIOqQQDy&id=A8EB4CBE440FA6A2DDDBA13A55849BD0043CF0BB&thid=OIP.CIOqQQDySSZ83WzjutEX4wHaEK&mediaurl=https%3a%2f%2fphunugioi.com%2fwp-content%2fuploads%2f2022%2f07%2fAnh-Lien-Quan-hinh-nen-Lien-Quan.jpg&cdnurl=https%3a%2f%2fth.bing.com%2fth%2fid%2fR.0883aa4100f249267cdd6ce3bad117e3%3frik%3du%252fA8BNCbhFU6oQ%26pid%3dImgRaw%26r%3d0&exph=1080&expw=1920&q=lieen+quan&simid=608039749496408723&FORM=IRPRST&ck=E50E47B22A73693F586985C2988BCC2E&selectedIndex=2&itb=0https://www.bing.com/images/search?view=detailV2&ccid=CIOqQQDy&id=A8EB4CBE440FA6A2DDDBA13A55849BD0043CF0BB&thid=OIP.CIOqQQDySSZ83WzjutEX4wHaEK&mediaurl=https%3a%2f%2fphunugioi.com%2fwp-content%2fuploads%2f2022%2f07%2fAnh-Lien-Quan-hinh-nen-Lien-Quan.jpg&cdnurl=https%3a%2f%2fth.bing.com%2fth%2fid%2fR.0883aa4100f249267cdd6ce3bad117e3%3frik%3du%252fA8BNCbhFU6oQ%26pid%3dImgRaw%26r%3d0&exph=1080&expw=1920&q=lieen+quan&simid=608039749496408723&FORM=IRPRST&ck=E50E47B22A73693F586985C2988BCC2E&selectedIndex=2&itb=0',
+    imageUrl: '',
     amenities: ['Wifi', 'Điều hòa', 'Nóng lạnh', 'Gác lửng'],
     availableFrom: Date.now(),
     availableTo: Date.now() + 30 * 24 * 60 * 60 * 1000,
@@ -63,9 +89,9 @@ const HomeScreen = ({navigation}: any) => {
       <View
         style={{
           backgroundColor: appColors.primary,
-          height: 200,
-          borderBottomRightRadius: 30,
-          borderBottomLeftRadius: 30,
+          height: 190,
+          // borderBottomRightRadius: 30,
+          // borderBottomLeftRadius: 30,
           paddingTop:
             Platform.OS === 'android'
               ? (StatusBar.currentHeight || 24) + 10 // Thêm 10px
@@ -85,12 +111,22 @@ const HomeScreen = ({navigation}: any) => {
                   color={appColors.white2}
                 />
               </RowComponent>
-              <TextComponent
-                text="Bình Dương"
-                flex={0}
-                color={appColors.white}
-                font={fontFamilies.medium}
-              />
+              {currenLocation && (
+                <View>
+                  <TextComponent
+                    text={`${currenLocation.address.district}`}
+                    flex={0}
+                    color={appColors.white}
+                    font={fontFamilies.medium}
+                  />
+                  <TextComponent
+                    text={`${currenLocation.address.city},${currenLocation.address.countryName}`}
+                    flex={0}
+                    color={appColors.white}
+                    font={fontFamilies.medium}
+                  />
+                </View>
+              )}
             </View>
             <CircleComponent color={appColors.limesoap} size={36}>
               <Ionicons
@@ -153,14 +189,12 @@ const HomeScreen = ({navigation}: any) => {
               <TextComponent text="Bộ lọc" color={appColors.white} />
             </RowComponent>
           </RowComponent>
-          <SpaceComponent height={10} />
         </View>
-
-        <View style={{paddingBottom: 14}}>
+        <SpaceComponent height={10} />
+        <View style={{paddingBottom: 10, zIndex: 1}}>
           <CategoriesList isColor />
         </View>
       </View>
-      <SpaceComponent height={10} />
       <ScrollView
         showsVerticalScrollIndicator={false}
         style={{
@@ -168,15 +202,37 @@ const HomeScreen = ({navigation}: any) => {
           marginBottom: 16,
         }}>
         <SectionComponent styles={{paddingHorizontal: 0, paddingTop: 20}}>
+          <View style={{justifyContent: 'center', alignItems: 'center'}}>
+            <Image
+              source={require('../../assets/images/banner.png')}
+              style={{
+                width: '100%',
+                height: 110,
+                borderRadius: 10,
+                marginTop: -20,
+              }}
+              resizeMode="cover"
+            />
+            {/* <TextComponent
+              title
+              text="Xin chào bạn"
+              size={20}
+              color={appColors.limesoap}
+            /> */}
+          </View>
+          <SpaceComponent height={15} />
           <TagBarComponent title="Đề xuất" onPress={() => {}} />
           <FlatList
             horizontal
             showsHorizontalScrollIndicator={false}
-            data={Array.from({length: 5})}
-            renderItem={({item, index}) => (
-              <PlaceItem type="card" item={itemPlace} key={`place${index}`} />
-            )}
+            data={Array.from({length: 5}).map((_, i) => ({
+              ...itemPlace,
+              id: `place_${i}`,
+            }))}
+            keyExtractor={item => item.id}
+            renderItem={({item}) => <PlaceItem type="card" item={item} />}
           />
+
           <TagBarComponent title="Gần bạn" onPress={() => {}} />
           <FlatList
             horizontal
