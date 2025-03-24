@@ -1,10 +1,12 @@
 import React, {ReactNode, useState} from 'react';
 import {
   KeyboardType,
+  StyleProp,
   StyleSheet,
   TextInput,
   TouchableOpacity,
   View,
+  ViewStyle,
 } from 'react-native';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
@@ -21,6 +23,9 @@ interface Props {
   allowClear?: boolean;
   type?: KeyboardType;
   onEnd?: () => void;
+  multiline?: boolean;
+  numberOfLines?: number;
+  styles?: StyleProp<ViewStyle>;
 }
 
 const InputComponent = (props: Props) => {
@@ -34,16 +39,21 @@ const InputComponent = (props: Props) => {
     allowClear,
     type,
     onEnd,
+    multiline,
+    numberOfLines,
+    styles,
   } = props;
 
   const [isShowPass, setIsShowPass] = useState(isPassword ?? false);
 
   return (
-    <View style={[styles.inputContainer]}>
+    <View style={[globalStyles.inputContainer]}>
       {affix ?? affix}
       <TextInput
-        style={[styles.input, globalStyles.text]}
+        style={[globalStyles.input, globalStyles.text, styles]}
+        multiline={multiline}
         value={value}
+        numberOfLines={numberOfLines}
         placeholder={placeholder ?? ''}
         onChangeText={val => onChange(val)}
         secureTextEntry={isShowPass}

@@ -22,6 +22,7 @@ const LoginScreen = ({navigation}: any) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isRemember, setIsRemember] = useState(true);
+
   const dispatch = useDispatch();
   const handleLogin = async () => {
     const emailValidation = Validate.email(email);
