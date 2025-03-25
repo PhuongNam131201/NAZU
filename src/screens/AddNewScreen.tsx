@@ -1,5 +1,5 @@
-import {View, Text} from 'react-native';
 import React, {useState} from 'react';
+import {useSelector} from 'react-redux';
 import {
   ButtonComponent,
   ContainerComponent,
@@ -7,9 +7,8 @@ import {
   SectionComponent,
   TextComponent,
 } from '../components';
-import {useSelector} from 'react-redux';
-import {authSelector} from '../redux/reducers/authReducer';
 import ChoiceLocation from '../components/ChoiceLocation';
+import {authSelector} from '../redux/reducers/authReducer';
 
 const initValue = {
   id: '',

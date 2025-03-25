@@ -32,7 +32,7 @@ const SplashScreen = () => {
         />
       </View>
       <SpaceComponent height={30} />
-      <ActivityIndicator color={appColors.green} size={22} />
+      <ActivityIndicator color={appColors.primary} size={22} />
     </ImageBackground>
   );
 };
