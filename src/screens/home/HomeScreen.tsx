@@ -1,21 +1,16 @@
 import React, {useEffect, useState} from 'react';
 import {
-  Button,
   FlatList,
   Image,
   Platform,
-  SafeAreaView,
   ScrollView,
   StatusBar,
-  Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+import Entypo from 'react-native-vector-icons/Entypo';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useDispatch, useSelector} from 'react-redux';
-import {authSelector, removeAuth} from '../../redux/reducers/authReducer';
-import {globalStyles} from '../../styles/globalStyles';
-import {appColors} from '../../constants/appColors';
 import {
   CategoriesList,
   CircleComponent,
@@ -24,21 +19,24 @@ import {
   SectionComponent,
   SpaceComponent,
   TagBarComponent,
-  TagComponent,
   TextComponent,
 } from '../../components';
-import Entypo from 'react-native-vector-icons/Entypo';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import {appColors} from '../../constants/appColors';
+import {authSelector} from '../../redux/reducers/authReducer';
+import {globalStyles} from '../../styles/globalStyles';
 
-import {fontFamilies} from '../../constants/fontFamilies';
-import {RoomModel} from '../../models/RoomModel';
 import Geolocation from '@react-native-community/geolocation';
 import axios from 'axios';
-import {Address, AddressModel} from '../../models/AddressModel';
+import {fontFamilies} from '../../constants/fontFamilies';
+import {AddressModel} from '../../models/AddressModel';
+import Geocoder from 'react-native-geocoding';
+Geocoder.init(process.env.MAP_API_GOONG as string);
 const HomeScreen = ({navigation}: any) => {
   const dispatch = useDispatch();
   const auth = useSelector(authSelector);
+  console.log(process.env.MAP_API_GOONG);
   const [currenLocation, setCurrenLocation] = useState<AddressModel>();
+
   useEffect(() => {
     Geolocation.getCurrentPosition(position => {
       if (position.coords) {
