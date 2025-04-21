@@ -70,11 +70,11 @@ const HomeScreen = ({navigation}: any) => {
       city: 'Bình Dương',
       district: 'Thủ Dầu Một',
       ward: 'Phú Hòa',
+      title: 'Nhà đẹp',
     },
     imageUrl: '',
     amenities: ['Wifi', 'Điều hòa', 'Nóng lạnh', 'Gác lửng'],
-    availableFrom: Date.now(),
-    availableTo: Date.now() + 30 * 24 * 60 * 60 * 1000,
+    time: Date.now(),
   };
 
   return (

@@ -8,6 +8,13 @@ import ModalLocation from '../modals/ModalLocation';
 
 const ChoiceLocation = () => {
   const [isVibleModalLocation, setIsVibleModalLocation] = useState(false);
+  const [addressSelected, setAddressSelected] = useState<{
+    address: string;
+    position?: {
+      lat: number;
+      long: number;
+    };
+  }>();
   return (
     <>
       <RowComponent
@@ -38,12 +45,22 @@ const ChoiceLocation = () => {
           <Feather name="map-pin" size={20} color={appColors.tomato} />
         </CardComponent>
 
-        <TextComponent text="Địa chỉ" flex={0} />
+        <TextComponent
+          numberOfLine={1}
+          ellipsizeMode="tail"
+          text={addressSelected ? addressSelected.address : 'Chọn địa chỉ'}
+          flex={1}
+          styles={{
+            marginRight: 10,
+            color: appColors.text,
+            maxWidth: '80%', // Giới hạn chiều rộng của TextComponent
+          }}
+        />
       </RowComponent>
       <ModalLocation
         visible={isVibleModalLocation}
         onClose={() => setIsVibleModalLocation(false)}
-        onSelect={val => console.log(val)}
+        onSelect={val => setAddressSelected(val)}
       />
     </>
   );

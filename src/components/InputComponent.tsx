@@ -21,7 +21,7 @@ interface Props {
   suffix?: ReactNode;
   isPassword?: boolean;
   allowClear?: boolean;
-  type?: KeyboardType;
+  keyboardType?: KeyboardType; // Đổi từ 'type' thành 'keyboardType'
   onEnd?: () => void;
   multiline?: boolean;
   numberOfLines?: number;
@@ -37,7 +37,7 @@ const InputComponent = (props: Props) => {
     placeholder,
     isPassword,
     allowClear,
-    type,
+    keyboardType, // Sử dụng keyboardType thay vì type
     onEnd,
     multiline,
     numberOfLines,
@@ -58,7 +58,7 @@ const InputComponent = (props: Props) => {
         onChangeText={val => onChange(val)}
         secureTextEntry={isShowPass}
         placeholderTextColor={'#747688'}
-        keyboardType={type ?? 'default'}
+        keyboardType={keyboardType ?? 'default'} // Sử dụng keyboardType
         autoCapitalize="none"
         onEndEditing={onEnd}
       />

@@ -7,12 +7,12 @@ export interface RoomModel {
   location: Location;
   imageUrl: string;
   amenities: string[];
-  availableFrom: number; // Timestamp
-  availableTo?: number; // Optional timestamp
+  time: number; // Timestamp
 }
 export interface Location {
   address: string;
   city: string;
   district: string;
   ward: string;
+  title: string;
 }
