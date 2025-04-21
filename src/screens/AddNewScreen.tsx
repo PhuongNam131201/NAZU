@@ -77,6 +77,28 @@ const AddNewScreen = () => {
 
   const handleAddEvent = async () => {
     try {
+      // Kiểm tra dữ liệu đầu vào
+      if (!eventData.title.trim()) {
+        Alert.alert('Lỗi', 'Vui lòng nhập tiêu đề.');
+        return;
+      }
+      if (!eventData.description.trim()) {
+        Alert.alert('Lỗi', 'Vui lòng nhập mô tả.');
+        return;
+      }
+      if (!eventData.price || isNaN(eventData.price) || eventData.price <= 0) {
+        Alert.alert('Lỗi', 'Vui lòng nhập giá hợp lệ.');
+        return;
+      }
+      if (!eventData.imageUrl) {
+        Alert.alert('Lỗi', 'Vui lòng chọn hình ảnh.');
+        return;
+      }
+      if (!eventData.location.address.trim()) {
+        Alert.alert('Lỗi', 'Vui lòng chọn địa chỉ hợp lệ.');
+        return;
+      }
+
       const formattedData = {
         ...eventData,
         id: database().ref().push().key, // Tạo id tự động từ Firebase
@@ -86,6 +108,9 @@ const AddNewScreen = () => {
         amenities: Array.isArray(eventData.amenities)
           ? eventData.amenities.filter((item: string) => item.trim() !== '') // Loại bỏ tiện ích rỗng
           : [],
+        location: {
+          ...eventData.location, // Đảm bảo location được lưu đầy đủ
+        },
       };
 
       console.log('Dữ liệu sẽ lưu vào Firebase:', formattedData);
@@ -177,7 +202,9 @@ const AddNewScreen = () => {
             />
           </View>
         ) : null}
-        <ChoiceLocation />
+        <ChoiceLocation
+          onSelect={val => handleChangeValue('location', val)} // Cập nhật eventData.location khi chọn địa chỉ
+        />
       </SectionComponent>
 
       <SectionComponent>

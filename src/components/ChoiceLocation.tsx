@@ -6,7 +6,14 @@ import {globalStyles} from '../styles/globalStyles';
 import {appColors} from '../constants/appColors';
 import ModalLocation from '../modals/ModalLocation';
 
-const ChoiceLocation = () => {
+const ChoiceLocation = ({
+  onSelect,
+}: {
+  onSelect: (val: {
+    address: string;
+    position?: {lat: number; long: number};
+  }) => void;
+}) => {
   const [isVibleModalLocation, setIsVibleModalLocation] = useState(false);
   const [addressSelected, setAddressSelected] = useState<{
     address: string;
@@ -15,6 +22,15 @@ const ChoiceLocation = () => {
       long: number;
     };
   }>();
+
+  const handleSelectAddress = (val: {
+    address: string;
+    position?: {lat: number; long: number};
+  }) => {
+    setAddressSelected(val); // Cập nhật địa chỉ đã chọn
+    onSelect(val); // Truyền địa chỉ ra ngoài thông qua callback
+  };
+
   return (
     <>
       <RowComponent
@@ -60,7 +76,7 @@ const ChoiceLocation = () => {
       <ModalLocation
         visible={isVibleModalLocation}
         onClose={() => setIsVibleModalLocation(false)}
-        onSelect={val => setAddressSelected(val)}
+        onSelect={handleSelectAddress} // Gọi hàm xử lý khi chọn địa chỉ
       />
     </>
   );
