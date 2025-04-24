@@ -30,35 +30,143 @@ import axios from 'axios';
 import {fontFamilies} from '../../constants/fontFamilies';
 import {AddressModel} from '../../models/AddressModel';
 import Geocoder from 'react-native-geocoding';
+import database from '@react-native-firebase/database';
+import haversine from 'haversine-distance'; // Thêm thư viện tính khoảng cách
+
 Geocoder.init(process.env.MAP_API_GOONG as string);
+
 const HomeScreen = ({navigation}: any) => {
   const dispatch = useDispatch();
   const auth = useSelector(authSelector);
   console.log(process.env.MAP_API_GOONG);
-  const [currenLocation, setCurrenLocation] = useState<AddressModel>();
+  const [currenLocation, setCurrenLocation] = useState<{
+    lat: number;
+    lon: number;
+    address?: {
+      district: string;
+      city: string;
+      countryName: string;
+    };
+  } | null>(null);
+  const [rooms, setRooms] = useState<any[]>([]);
+  const [nearbyRooms, setNearbyRooms] = useState<any[]>([]); // Danh sách nhà trọ gần bạn
 
   useEffect(() => {
     Geolocation.getCurrentPosition(position => {
       if (position.coords) {
-        reverseGeoCode({
+        const currentLocation = {
           lat: position.coords.latitude,
-          long: position.coords.longitude,
-        });
+          lon: position.coords.longitude,
+        };
+        setCurrenLocation(currentLocation);
+        reverseGeoCode(currentLocation); // Lấy địa chỉ hiện tại
       }
     });
   }, []);
-  const reverseGeoCode = async ({lat, long}: {lat: number; long: number}) => {
-    const api = `https://revgeocode.search.hereapi.com/v1/revgeocode?at=${lat},${long}&lang=vi-VI&apiKey=6dVvU0jSlISYFm251QMhjRjMAwHvOllgnQhW_Sq3PBE`;
+
+  useEffect(() => {
+    const fetchRooms = async () => {
+      try {
+        const snapshot = await database().ref('/rooms').once('value');
+        const data = snapshot.val();
+        if (data) {
+          const roomsArray = Object.keys(data).map(key => ({
+            id: key,
+            ...data[key],
+          }));
+          setRooms(roomsArray);
+
+          if (currenLocation) {
+            calculateNearbyRooms(roomsArray, currenLocation); // Tính nhà trọ gần bạn
+          }
+        }
+      } catch (error) {
+        console.error('Lỗi khi lấy dữ liệu từ Firebase:', error);
+      }
+    };
+
+    fetchRooms();
+  }, [currenLocation]);
+
+  const reverseGeoCode = async ({lat, lon}: {lat: number; lon: number}) => {
+    const api = `https://revgeocode.search.hereapi.com/v1/revgeocode?at=${lat},${lon}&lang=vi-VI&apiKey=6dVvU0jSlISYFm251QMhjRjMAwHvOllgnQhW_Sq3PBE`;
     try {
       const res = await axios(api);
       if (res && res.status == 200 && res.data) {
         const items = res.data.items;
-        setCurrenLocation(items[0]);
+        if (items && items.length > 0) {
+          const address = items[0].address;
+          setCurrenLocation({lat, lon, address}); // Cập nhật vị trí hiện tại
+        }
       }
     } catch (error) {
       console.log(error);
     }
   };
+
+  const calculateNearbyRooms = (
+    rooms: any[],
+    currentLocation: {lat: number; lon: number} | null, // Đổi 'long' thành 'lon' để phù hợp với kiểu LatLon
+  ) => {
+    if (!currentLocation) {
+      console.error('currentLocation is null or undefined'); // Log lỗi nếu currentLocation bị null
+      return;
+    }
+
+    const sortedRooms = rooms
+      .map(room => {
+        if (room.location?.position) {
+          const roomLocation = {
+            lat: room.location.position.lat,
+            lon: room.location.position.long, // Đổi 'long' thành 'lon' để phù hợp với kiểu LatLon
+          };
+
+          // Kiểm tra giá trị hợp lệ trước khi tính khoảng cách
+          if (
+            typeof currentLocation.lat !== 'number' ||
+            typeof currentLocation.lon !== 'number' ||
+            typeof roomLocation.lat !== 'number' ||
+            typeof roomLocation.lon !== 'number' ||
+            isNaN(currentLocation.lat) ||
+            isNaN(currentLocation.lon) ||
+            isNaN(roomLocation.lat) ||
+            isNaN(roomLocation.lon)
+          ) {
+            console.warn('Invalid location data detected:', {
+              currentLocation,
+              roomLocation,
+            });
+            return {...room, distance: Infinity}; // Đặt khoảng cách là vô cực nếu dữ liệu không hợp lệ
+          }
+
+          try {
+            const distance = haversine(currentLocation, roomLocation); // Tính khoảng cách
+            if (isNaN(distance)) {
+              console.error('Calculated distance is NaN:', {
+                currentLocation,
+                roomLocation,
+              });
+              return {...room, distance: Infinity}; // Đặt khoảng cách là vô cực nếu tính toán thất bại
+            }
+
+            return {...room, distance};
+          } catch (error) {
+            console.error('Error calculating distance:', error, {
+              currentLocation,
+              roomLocation,
+            });
+            return {...room, distance: Infinity}; // Đặt khoảng cách là vô cực nếu xảy ra lỗi
+          }
+        }
+
+        console.warn('roomLocation is undefined for room:', room); // Log cảnh báo nếu không có vị trí
+        return {...room, distance: Infinity}; // Nếu không có vị trí, đặt khoảng cách là vô cực
+      })
+      .sort((a, b) => a.distance - b.distance); // Sắp xếp theo khoảng cách từ gần đến xa
+
+    setNearbyRooms(sortedRooms);
+  };
+
   const itemPlace = {
     id: 'room_001',
     ownerId: '1',
@@ -67,9 +175,6 @@ const HomeScreen = ({navigation}: any) => {
     price: 5000000,
     location: {
       address: '123 Đường ABC',
-      city: 'Bình Dương',
-      district: 'Thủ Dầu Một',
-      ward: 'Phú Hòa',
       title: 'Nhà đẹp',
     },
     imageUrl: '',
@@ -78,18 +183,12 @@ const HomeScreen = ({navigation}: any) => {
   };
 
   return (
-    // <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-    //   <Text>HomeScreen</Text>
-    //   <Button title="Logout" onPress={async () => dispatch(removeAuth({}))} />
-    // </View>
     <View style={[globalStyles.container]}>
       <StatusBar barStyle={'light-content'} />
       <View
         style={{
           backgroundColor: appColors.primary,
           height: 190,
-          // borderBottomRightRadius: 30,
-          // borderBottomLeftRadius: 30,
           paddingTop:
             Platform.OS === 'android'
               ? (StatusBar.currentHeight || 24) + 10 // Thêm 10px
@@ -109,7 +208,7 @@ const HomeScreen = ({navigation}: any) => {
                   color={appColors.white2}
                 />
               </RowComponent>
-              {currenLocation && (
+              {currenLocation && currenLocation.address && (
                 <View>
                   <TextComponent
                     text={`${currenLocation.address.district}`}
@@ -211,22 +310,13 @@ const HomeScreen = ({navigation}: any) => {
               }}
               resizeMode="cover"
             />
-            {/* <TextComponent
-              title
-              text="Xin chào bạn"
-              size={20}
-              color={appColors.limesoap}
-            /> */}
           </View>
           <SpaceComponent height={15} />
           <TagBarComponent title="Đề xuất" onPress={() => {}} />
           <FlatList
             horizontal
             showsHorizontalScrollIndicator={false}
-            data={Array.from({length: 5}).map((_, i) => ({
-              ...itemPlace,
-              id: `place_${i}`,
-            }))}
+            data={rooms} // Lấy danh sách phòng trọ từ Firebase
             keyExtractor={item => item.id}
             renderItem={({item}) => <PlaceItem type="card" item={item} />}
           />
@@ -235,9 +325,18 @@ const HomeScreen = ({navigation}: any) => {
           <FlatList
             horizontal
             showsHorizontalScrollIndicator={false}
-            data={Array.from({length: 5})}
-            renderItem={({item, index}) => (
-              <PlaceItem type="card" item={itemPlace} key={`place${index}`} />
+            data={nearbyRooms} // Sử dụng danh sách nhà trọ gần bạn
+            keyExtractor={item => item.id}
+            renderItem={({item}) => (
+              <PlaceItem
+                type="card"
+                item={{
+                  ...item,
+                  distanceText: item.distance
+                    ? `${(item.distance / 1000).toFixed(2)} km` // Hiển thị khoảng cách theo km
+                    : 'Không xác định',
+                }}
+              />
             )}
           />
         </SectionComponent>

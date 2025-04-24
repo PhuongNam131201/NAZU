@@ -9,7 +9,9 @@ import {
   Alert,
 } from 'react-native'; // Thêm Alert từ React Native
 import {launchImageLibrary} from 'react-native-image-picker'; // Thêm thư viện chọn ảnh
-import database from '@react-native-firebase/database'; // Thêm Firebase Realtime Database
+import {getDatabase, ref, set, push} from '@react-native-firebase/database'; // Sử dụng API mới của Firebase
+import storage from '@react-native-firebase/storage'; // Thêm Firebase Storage
+import {CommonActions} from '@react-navigation/native'; // Sử dụng CommonActions để reset navigation
 import {
   ButtonComponent,
   ContainerComponent,
@@ -36,21 +38,27 @@ const initValue = {
 };
 
 const amenitiesOptions = [
-  'Điều hòa',
   'Phòng đơn',
   'Phòng ghép',
-  'Wifi',
-  'Nóng lạnh',
-  'Gác lửng',
+  'Chung cư',
+  'Nhà trọ',
+  'Nhà nguyên căn',
+  'WiFi',
+  'Thú cưng',
+  'Điều hoà',
+  'An ninh tốt',
 ];
 
-const AddNewScreen = () => {
+const AddNewScreen = ({navigation}) => {
   const auth = useSelector(authSelector); // Lấy thông tin người dùng từ Redux
   const [eventData, setEventData] = useState<any>({
     ...initValue,
     ownerId: auth.id, // Gán ownerId là id của người dùng hiện tại
     authorId: auth.id, // Giữ lại authorId nếu cần
   });
+
+  const currentDateTime = new Date().toLocaleString(); // Lấy ngày giờ hiện tại
+
   const [isAmenitiesModalVisible, setIsAmenitiesModalVisible] = useState(false);
 
   const handleChangeValue = (key: string, value: any) => {
@@ -72,6 +80,31 @@ const AddNewScreen = () => {
         const selectedImage = response.assets[0].uri;
         handleChangeValue('imageUrl', selectedImage); // Cập nhật URL hình ảnh
       }
+    });
+  };
+
+  const uploadImageToStorage = async (uri: string, fileName: string) => {
+    const reference = storage().ref(`images/${fileName}`);
+    const task = reference.putFile(uri);
+
+    return new Promise<string>((resolve, reject) => {
+      task.on(
+        'state_changed',
+        taskSnapshot => {
+          console.log(
+            `${taskSnapshot.bytesTransferred} transferred out of ${taskSnapshot.totalBytes}`,
+          );
+        },
+        error => {
+          console.error('Lỗi khi tải hình ảnh lên Storage:', error);
+          reject(error);
+        },
+        async () => {
+          const downloadURL = await reference.getDownloadURL();
+          console.log('URL hình ảnh:', downloadURL); // Log URL hình ảnh
+          resolve(downloadURL); // Trả về URL tải xuống của hình ảnh
+        },
+      );
     });
   };
 
@@ -99,41 +132,51 @@ const AddNewScreen = () => {
         return;
       }
 
+      // Tải hình ảnh lên Firebase Storage
+      const fileName = `room_${Date.now()}.jpg`;
+      const imageUrl = await uploadImageToStorage(eventData.imageUrl, fileName);
+
+      const db = getDatabase(); // Sử dụng API mới
+      const roomRef = push(ref(db, '/rooms')); // Tạo id tự động từ Firebase
       const formattedData = {
         ...eventData,
-        id: database().ref().push().key, // Tạo id tự động từ Firebase
-        ownerId: auth.id, // Đảm bảo ownerId là id của người dùng hiện tại
-        price: parseInt(eventData.price, 10), // Đảm bảo giá là số
-        time: new Date(eventData.time).toISOString(), // Chuyển thời gian sang định dạng ISO
+        id: roomRef.key, // Lấy id từ push
+        ownerId: auth.id,
+        price: parseInt(eventData.price, 10),
+        time: new Date(eventData.time).toISOString(),
+        imageUrl,
         amenities: Array.isArray(eventData.amenities)
-          ? eventData.amenities.filter((item: string) => item.trim() !== '') // Loại bỏ tiện ích rỗng
+          ? eventData.amenities.filter((item: string) => item.trim() !== '')
           : [],
         location: {
-          ...eventData.location, // Đảm bảo location được lưu đầy đủ
+          ...eventData.location,
         },
       };
 
       console.log('Dữ liệu sẽ lưu vào Firebase:', formattedData);
 
       // Lưu dữ liệu vào Firebase Realtime Database
-      await database().ref(`/rooms/${formattedData.id}`).set(formattedData);
+      await set(roomRef, formattedData);
 
       Alert.alert('Thành công', 'Phòng trọ đã được tạo thành công!');
 
       // Reset dữ liệu về giá trị mặc định
       setEventData({
         ...initValue,
-        ownerId: auth.id, // Đặt lại ownerId sau khi reset
-        title: '',
-        description: '',
-        price: 0,
-        location: {
-          address: '',
-          title: '',
-        },
-        imageUrl: '',
-        amenities: [],
+        ownerId: auth.id,
       });
+
+      // Điều hướng về HomeScreen nếu nó tồn tại trong navigator
+      if (navigation.canGoBack()) {
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{name: 'Home'}], // Điều hướng về HomeScreen
+          }),
+        );
+      } else {
+        console.warn('HomeScreen không được định nghĩa trong navigator.');
+      }
     } catch (error) {
       console.error('Lỗi khi lưu dữ liệu vào Firebase:', error);
       Alert.alert('Lỗi', 'Đã xảy ra lỗi khi tạo phòng trọ.');
@@ -146,6 +189,12 @@ const AddNewScreen = () => {
         <TextComponent title text="Tạo phòng trọ" />
       </SectionComponent>
       <SectionComponent>
+        <InputComponent
+          placeholder="Ngày giờ hiện tại"
+          value={currentDateTime} // Hiển thị ngày giờ hiện tại
+          onChange={() => {}} // Không cho phép chỉnh sửa
+          styles={{color: '#555'}}
+        />
         <InputComponent
           placeholder="Tiêu đề"
           allowClear
