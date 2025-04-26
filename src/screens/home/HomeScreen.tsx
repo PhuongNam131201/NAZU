@@ -3,6 +3,7 @@ import {
   FlatList,
   Image,
   Platform,
+  RefreshControl,
   ScrollView,
   StatusBar,
   TouchableOpacity,
@@ -50,6 +51,7 @@ const HomeScreen = ({navigation}: any) => {
   } | null>(null);
   const [rooms, setRooms] = useState<any[]>([]);
   const [nearbyRooms, setNearbyRooms] = useState<any[]>([]); // Danh sách nhà trọ gần bạn
+  const [refreshing, setRefreshing] = useState(false); // Trạng thái làm mới
 
   useEffect(() => {
     Geolocation.getCurrentPosition(position => {
@@ -70,15 +72,19 @@ const HomeScreen = ({navigation}: any) => {
         const snapshot = await database().ref('/rooms').once('value');
         const data = snapshot.val();
         if (data) {
-          const roomsArray = Object.keys(data).map(key => ({
-            id: key,
-            ...data[key],
-          }));
+          const roomsArray = Object.keys(data)
+            .map(key => ({
+              id: key,
+              ...data[key],
+            }))
+            .filter(room => room.isApproved === true); // Chỉ hiển thị các bài đăng đã được duyệt
           setRooms(roomsArray);
 
           if (currenLocation) {
             calculateNearbyRooms(roomsArray, currenLocation); // Tính nhà trọ gần bạn
           }
+        } else {
+          setRooms([]); // Đảm bảo danh sách trống nếu không có dữ liệu
         }
       } catch (error) {
         console.error('Lỗi khi lấy dữ liệu từ Firebase:', error);
@@ -106,65 +112,53 @@ const HomeScreen = ({navigation}: any) => {
 
   const calculateNearbyRooms = (
     rooms: any[],
-    currentLocation: {lat: number; lon: number} | null, // Đổi 'long' thành 'lon' để phù hợp với kiểu LatLon
+    currentLocation: {lat: number; lon: number} | null,
   ) => {
-    if (!currentLocation) {
-      console.error('currentLocation is null or undefined'); // Log lỗi nếu currentLocation bị null
-      return;
-    }
+    if (!currentLocation) return;
 
     const sortedRooms = rooms
       .map(room => {
         if (room.location?.position) {
           const roomLocation = {
             lat: room.location.position.lat,
-            lon: room.location.position.long, // Đổi 'long' thành 'lon' để phù hợp với kiểu LatLon
+            lon: room.location.position.long,
           };
 
-          // Kiểm tra giá trị hợp lệ trước khi tính khoảng cách
-          if (
-            typeof currentLocation.lat !== 'number' ||
-            typeof currentLocation.lon !== 'number' ||
-            typeof roomLocation.lat !== 'number' ||
-            typeof roomLocation.lon !== 'number' ||
-            isNaN(currentLocation.lat) ||
-            isNaN(currentLocation.lon) ||
-            isNaN(roomLocation.lat) ||
-            isNaN(roomLocation.lon)
-          ) {
-            console.warn('Invalid location data detected:', {
-              currentLocation,
-              roomLocation,
-            });
-            return {...room, distance: Infinity}; // Đặt khoảng cách là vô cực nếu dữ liệu không hợp lệ
-          }
-
-          try {
-            const distance = haversine(currentLocation, roomLocation); // Tính khoảng cách
-            if (isNaN(distance)) {
-              console.error('Calculated distance is NaN:', {
-                currentLocation,
-                roomLocation,
-              });
-              return {...room, distance: Infinity}; // Đặt khoảng cách là vô cực nếu tính toán thất bại
-            }
-
-            return {...room, distance};
-          } catch (error) {
-            console.error('Error calculating distance:', error, {
-              currentLocation,
-              roomLocation,
-            });
-            return {...room, distance: Infinity}; // Đặt khoảng cách là vô cực nếu xảy ra lỗi
-          }
+          const distance = haversine(currentLocation, roomLocation);
+          return {...room, distance};
         }
-
-        console.warn('roomLocation is undefined for room:', room); // Log cảnh báo nếu không có vị trí
-        return {...room, distance: Infinity}; // Nếu không có vị trí, đặt khoảng cách là vô cực
+        return {...room, distance: Infinity};
       })
-      .sort((a, b) => a.distance - b.distance); // Sắp xếp theo khoảng cách từ gần đến xa
+      .sort((a, b) => a.distance - b.distance);
 
     setNearbyRooms(sortedRooms);
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      const snapshot = await database().ref('/rooms').once('value');
+      const data = snapshot.val();
+      if (data) {
+        const roomsArray = Object.keys(data)
+          .map(key => ({
+            id: key,
+            ...data[key],
+          }))
+          .filter(room => room.isApproved === true); // Chỉ hiển thị các bài đăng đã được duyệt
+        setRooms(roomsArray);
+
+        if (currenLocation) {
+          calculateNearbyRooms(roomsArray, currenLocation); // Tính nhà trọ gần bạn
+        }
+      } else {
+        setRooms([]); // Đảm bảo danh sách trống nếu không có dữ liệu
+      }
+    } catch (error) {
+      console.error('Lỗi khi làm mới dữ liệu:', error);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const itemPlace = {
@@ -293,6 +287,9 @@ const HomeScreen = ({navigation}: any) => {
         </View>
       </View>
       <ScrollView
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
         showsVerticalScrollIndicator={false}
         style={{
           flex: 1,
@@ -316,7 +313,7 @@ const HomeScreen = ({navigation}: any) => {
           <FlatList
             horizontal
             showsHorizontalScrollIndicator={false}
-            data={rooms} // Lấy danh sách phòng trọ từ Firebase
+            data={rooms} // Chỉ hiển thị các bài đăng đã được duyệt
             keyExtractor={item => item.id}
             renderItem={({item}) => <PlaceItem type="card" item={item} />}
           />
@@ -325,7 +322,7 @@ const HomeScreen = ({navigation}: any) => {
           <FlatList
             horizontal
             showsHorizontalScrollIndicator={false}
-            data={nearbyRooms} // Sử dụng danh sách nhà trọ gần bạn
+            data={nearbyRooms} // Chỉ hiển thị các bài đăng đã được duyệt và gần bạn
             keyExtractor={item => item.id}
             renderItem={({item}) => (
               <PlaceItem

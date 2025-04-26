@@ -37,9 +37,10 @@ const initValue = {
   landCertificate: '', // Giấy chứng nhận quyền sử dụng đất
   amenities: [],
   time: Date.now(),
-  status: 'pending', // Trạng thái xét duyệt (pending, approved, rejected)
+  status: 'Còn trống', // Trạng thái xét duyệt (tiếng Việt)
   ownerName: '', // Họ và tên chủ trọ
   ownerPhone: '', // Số điện thoại chủ trọ
+  isApproved: false, // Mặc định là chưa được duyệt
 };
 
 const amenitiesOptions = [
@@ -194,7 +195,8 @@ const AddNewScreen = ({navigation}) => {
         imageUrl,
         verificationDocument: verificationDocumentUrl,
         landCertificate: landCertificateUrl,
-        status: 'pending', // Mặc định là "pending"
+        isApproved: false, // Mặc định là chưa được duyệt
+        status: 'pending', // Mặc định là "Chờ duyệt"
       };
 
       console.log('Dữ liệu sẽ lưu vào Firebase:', formattedData);
@@ -206,6 +208,7 @@ const AddNewScreen = ({navigation}) => {
         'Thành công',
         'Phòng trọ đã được tạo thành công và đang chờ duyệt!',
       );
+
       setEventData({...initValue, ownerId: auth.id});
 
       // Điều hướng về HomeScreen nếu nó tồn tại trong navigator

@@ -23,7 +23,13 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import {appColors} from '../../constants/appColors';
 import database from '@react-native-firebase/database';
 import storage from '@react-native-firebase/storage';
-import {getDatabase, ref, update} from '@react-native-firebase/database';
+import {
+  getDatabase,
+  ref,
+  update,
+  push,
+  set,
+} from '@react-native-firebase/database';
 import {launchImageLibrary} from 'react-native-image-picker';
 
 const PlaceDetail = ({navigation, route}: any) => {
@@ -109,9 +115,11 @@ const PlaceDetail = ({navigation, route}: any) => {
       const proofRef = storage().ref(`deposits/${proofFileName}`);
       const cccdRef = storage().ref(`deposits/${cccdFileName}`);
 
+      // Lưu hình ảnh vào Firebase Storage
       await proofRef.putFile(proofImage);
       await cccdRef.putFile(depositorCCCD);
 
+      // Lấy URL của hình ảnh đã lưu
       const proofImageUrl = await proofRef.getDownloadURL();
       const cccdImageUrl = await cccdRef.getDownloadURL();
 
@@ -119,7 +127,7 @@ const PlaceDetail = ({navigation, route}: any) => {
       const customerRef = ref(db, `/customers`);
       const newCustomerRef = push(customerRef);
 
-      // Lưu thông tin khách hàng vào cột `customers`
+      // Lưu dữ liệu vào bảng `customers`
       await set(newCustomerRef, {
         id: newCustomerRef.key,
         roomId: roomId,
@@ -131,7 +139,7 @@ const PlaceDetail = ({navigation, route}: any) => {
         createdAt: Date.now(),
       });
 
-      // Cập nhật trạng thái phòng
+      // Cập nhật trạng thái phòng trong bảng `rooms`
       const roomRef = ref(db, `/rooms/${roomId}`);
       await update(roomRef, {
         isDeposited: true,
@@ -143,7 +151,11 @@ const PlaceDetail = ({navigation, route}: any) => {
       setRoom({...room, isDeposited: true, status: 'Đã đặt cọc'});
     } catch (error) {
       console.error('Lỗi khi đặt cọc:', error);
-      Alert.alert('Lỗi', 'Không thể đặt cọc phòng.');
+      if (error.code === 'database/permission-denied') {
+        Alert.alert('Lỗi', 'Bạn không có quyền thực hiện thao tác này.');
+      } else {
+        Alert.alert('Lỗi', 'Không thể đặt cọc phòng.');
+      }
     }
   };
 

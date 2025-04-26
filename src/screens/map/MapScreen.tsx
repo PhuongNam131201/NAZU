@@ -41,8 +41,8 @@ const MapScreen = () => {
       <MapView
         style={styles.map}
         initialRegion={{
-          latitude: 10.762622, // Tọa độ mặc định (có thể thay đổi)
-          longitude: 106.660172,
+          latitude: 10.96667, // Tọa độ mặc định (có thể thay đổi)
+          longitude: 106.65,
           latitudeDelta: 0.1,
           longitudeDelta: 0.1,
         }}>

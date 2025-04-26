@@ -37,10 +37,12 @@ const PlaceScreen = ({navigation}: any) => {
         const snapshot = await database().ref('/rooms').once('value');
         const data = snapshot.val();
         if (data) {
-          const roomsArray = Object.keys(data).map(key => ({
-            id: key,
-            ...data[key],
-          }));
+          const roomsArray = Object.keys(data)
+            .map(key => ({
+              id: key,
+              ...data[key],
+            }))
+            .filter(room => room.isApproved === true); // Chỉ hiển thị các bài đăng đã được duyệt
           setRooms(roomsArray);
 
           if (currenLocation) {
