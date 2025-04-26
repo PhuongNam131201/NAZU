@@ -33,8 +33,13 @@ const initValue = {
     title: '',
   },
   imageUrl: '',
-  amenities: [''],
+  verificationDocument: '', // CMND/CCCD
+  landCertificate: '', // Giấy chứng nhận quyền sử dụng đất
+  amenities: [],
   time: Date.now(),
+  status: 'pending', // Trạng thái xét duyệt (pending, approved, rejected)
+  ownerName: '', // Họ và tên chủ trọ
+  ownerPhone: '', // Số điện thoại chủ trọ
 };
 
 const amenitiesOptions = [
@@ -79,6 +84,14 @@ const AddNewScreen = ({navigation}) => {
       if (response.assets && response.assets.length > 0) {
         const selectedImage = response.assets[0].uri;
         handleChangeValue('imageUrl', selectedImage); // Cập nhật URL hình ảnh
+      }
+    });
+  };
+
+  const handleSelectDocument = (key: string) => {
+    launchImageLibrary({mediaType: 'photo'}, response => {
+      if (response.assets && response.assets.length > 0) {
+        handleChangeValue(key, response.assets[0].uri);
       }
     });
   };
@@ -131,26 +144,57 @@ const AddNewScreen = ({navigation}) => {
         Alert.alert('Lỗi', 'Vui lòng chọn địa chỉ hợp lệ.');
         return;
       }
+      if (!eventData.verificationDocument) {
+        Alert.alert('Lỗi', 'Vui lòng tải lên CMND/CCCD.');
+        return;
+      }
+      if (!eventData.landCertificate) {
+        Alert.alert(
+          'Lỗi',
+          'Vui lòng tải lên giấy chứng nhận quyền sử dụng đất.',
+        );
+        return;
+      }
+      if (!eventData.ownerName.trim()) {
+        Alert.alert('Lỗi', 'Vui lòng nhập họ và tên chủ trọ.');
+        return;
+      }
+      if (!eventData.ownerPhone.trim()) {
+        Alert.alert('Lỗi', 'Vui lòng nhập số điện thoại chủ trọ.');
+        return;
+      }
 
-      // Tải hình ảnh lên Firebase Storage
-      const fileName = `room_${Date.now()}.jpg`;
-      const imageUrl = await uploadImageToStorage(eventData.imageUrl, fileName);
+      // Tải hình ảnh và tài liệu lên Firebase Storage
+      const imageFileName = `room_${Date.now()}.jpg`;
+      const imageUrl = await uploadImageToStorage(
+        eventData.imageUrl,
+        imageFileName,
+      );
 
-      const db = getDatabase(); // Sử dụng API mới
-      const roomRef = push(ref(db, '/rooms')); // Tạo id tự động từ Firebase
+      const verificationFileName = `verification_${Date.now()}.jpg`;
+      const verificationDocumentUrl = await uploadImageToStorage(
+        eventData.verificationDocument,
+        verificationFileName,
+      );
+
+      const landCertificateFileName = `land_certificate_${Date.now()}.jpg`;
+      const landCertificateUrl = await uploadImageToStorage(
+        eventData.landCertificate,
+        landCertificateFileName,
+      );
+
+      const db = getDatabase();
+      const roomRef = push(ref(db, '/rooms'));
       const formattedData = {
         ...eventData,
-        id: roomRef.key, // Lấy id từ push
+        id: roomRef.key,
         ownerId: auth.id,
         price: parseInt(eventData.price, 10),
         time: new Date(eventData.time).toISOString(),
         imageUrl,
-        amenities: Array.isArray(eventData.amenities)
-          ? eventData.amenities.filter((item: string) => item.trim() !== '')
-          : [],
-        location: {
-          ...eventData.location,
-        },
+        verificationDocument: verificationDocumentUrl,
+        landCertificate: landCertificateUrl,
+        status: 'pending', // Mặc định là "pending"
       };
 
       console.log('Dữ liệu sẽ lưu vào Firebase:', formattedData);
@@ -158,25 +202,19 @@ const AddNewScreen = ({navigation}) => {
       // Lưu dữ liệu vào Firebase Realtime Database
       await set(roomRef, formattedData);
 
-      Alert.alert('Thành công', 'Phòng trọ đã được tạo thành công!');
-
-      // Reset dữ liệu về giá trị mặc định
-      setEventData({
-        ...initValue,
-        ownerId: auth.id,
-      });
+      Alert.alert(
+        'Thành công',
+        'Phòng trọ đã được tạo thành công và đang chờ duyệt!',
+      );
+      setEventData({...initValue, ownerId: auth.id});
 
       // Điều hướng về HomeScreen nếu nó tồn tại trong navigator
-      if (navigation.canGoBack()) {
-        navigation.dispatch(
-          CommonActions.reset({
-            index: 0,
-            routes: [{name: 'Home'}], // Điều hướng về HomeScreen
-          }),
-        );
-      } else {
-        console.warn('HomeScreen không được định nghĩa trong navigator.');
-      }
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{name: 'Home'}], // Điều hướng về HomeScreen
+        }),
+      );
     } catch (error) {
       console.error('Lỗi khi lưu dữ liệu vào Firebase:', error);
       Alert.alert('Lỗi', 'Đã xảy ra lỗi khi tạo phòng trọ.');
@@ -347,6 +385,86 @@ const AddNewScreen = ({navigation}) => {
           </View>
         </View>
       </Modal>
+
+      <SectionComponent>
+        <TextComponent text="CMND/CCCD" />
+        <TouchableOpacity
+          style={{
+            padding: 10,
+            borderWidth: 1,
+            borderColor: '#ccc',
+            borderRadius: 8,
+            marginBottom: 10,
+            alignItems: 'center',
+          }}
+          onPress={() => handleSelectDocument('verificationDocument')}>
+          <TextComponent
+            text={
+              eventData.verificationDocument
+                ? 'CMND/CCCD đã tải lên'
+                : 'Tải lên CMND/CCCD'
+            }
+            styles={{color: '#555'}}
+          />
+        </TouchableOpacity>
+        {eventData.verificationDocument ? (
+          <Image
+            source={{uri: eventData.verificationDocument}}
+            style={{width: '100%', height: 200, marginBottom: 10}}
+            resizeMode="cover"
+          />
+        ) : null}
+
+        <TextComponent text="Giấy chứng nhận quyền sử dụng đất" />
+        <TouchableOpacity
+          style={{
+            padding: 10,
+            borderWidth: 1,
+            borderColor: '#ccc',
+            borderRadius: 8,
+            marginBottom: 10,
+            alignItems: 'center',
+          }}
+          onPress={() => handleSelectDocument('landCertificate')}>
+          <TextComponent
+            text={
+              eventData.landCertificate
+                ? 'Giấy chứng nhận đã tải lên'
+                : 'Tải lên giấy chứng nhận quyền sử dụng đất'
+            }
+            styles={{color: '#555'}}
+          />
+        </TouchableOpacity>
+        {eventData.landCertificate ? (
+          <Image
+            source={{uri: eventData.landCertificate}}
+            style={{width: '100%', height: 200, marginBottom: 10}}
+            resizeMode="cover"
+          />
+        ) : null}
+      </SectionComponent>
+
+      <SectionComponent>
+        <InputComponent
+          placeholder="Họ và tên chủ trọ"
+          allowClear
+          value={eventData.ownerName}
+          onChange={val => handleChangeValue('ownerName', val)}
+        />
+        <InputComponent
+          placeholder="Số điện thoại chủ trọ"
+          allowClear
+          keyboardType="phone-pad"
+          value={eventData.ownerPhone}
+          onChange={val => handleChangeValue('ownerPhone', val)}
+        />
+        <InputComponent
+          placeholder="Số tài khoản chủ trọ"
+          allowClear
+          value={eventData.ownerBankAccount}
+          onChange={val => handleChangeValue('ownerBankAccount', val)}
+        />
+      </SectionComponent>
 
       <SectionComponent>
         <ButtonComponent

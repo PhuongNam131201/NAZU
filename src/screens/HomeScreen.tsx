@@ -20,7 +20,7 @@ const HomeScreen = ({navigation}: any) => {
   useEffect(() => {
     const fetchRooms = async () => {
       try {
-        const snapshot = await database().ref('/rooms').once('value');
+        const snapshot = await database().ref('/rooms').once('value'); // Đảm bảo đường dẫn là "/rooms"
         const data = snapshot.val();
         if (data) {
           const roomsArray = Object.keys(data).map(key => ({

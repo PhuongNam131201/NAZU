@@ -30,14 +30,14 @@ interface Props {
 
 const InputComponent = (props: Props) => {
   const {
-    value,
+    value = '', // Đặt giá trị mặc định là chuỗi rỗng nếu `value` là `undefined`
     onChange,
     affix,
     suffix,
     placeholder,
     isPassword,
     allowClear,
-    keyboardType, // Sử dụng keyboardType thay vì type
+    keyboardType,
     onEnd,
     multiline,
     numberOfLines,
@@ -58,7 +58,7 @@ const InputComponent = (props: Props) => {
         onChangeText={val => onChange(val)}
         secureTextEntry={isShowPass}
         placeholderTextColor={'#747688'}
-        keyboardType={keyboardType ?? 'default'} // Sử dụng keyboardType
+        keyboardType={keyboardType ?? 'default'}
         autoCapitalize="none"
         onEndEditing={onEnd}
       />
@@ -74,7 +74,7 @@ const InputComponent = (props: Props) => {
             color={appColors.gray}
           />
         ) : (
-          value.length > 0 &&
+          value.length > 0 && // Kiểm tra `value.length` chỉ khi `value` không rỗng
           allowClear && (
             <AntDesign name="close" size={22} color={appColors.text} />
           )

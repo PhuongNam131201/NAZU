@@ -7,6 +7,8 @@ import {
   ActivityIndicator,
   StyleSheet,
   SafeAreaView,
+  Alert,
+  Modal,
 } from 'react-native';
 import {
   CardComponent,
@@ -14,18 +16,27 @@ import {
   TextComponent,
   SpaceComponent,
   ButtonComponent,
+  InputComponent,
 } from '../../components';
 import {appInfo} from '../../constants/appinfos';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {appColors} from '../../constants/appColors';
 import database from '@react-native-firebase/database';
-import {Button} from '@react-navigation/elements';
+import storage from '@react-native-firebase/storage';
+import {getDatabase, ref, update} from '@react-native-firebase/database';
+import {launchImageLibrary} from 'react-native-image-picker';
 
 const PlaceDetail = ({navigation, route}: any) => {
   const [room, setRoom] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isDepositModalVisible, setIsDepositModalVisible] = useState(false);
+  const [depositorName, setDepositorName] = useState('');
+  const [depositorPhone, setDepositorPhone] = useState('');
+  const [depositorCCCD, setDepositorCCCD] = useState<string | null>(null);
+  const [depositorNote, setDepositorNote] = useState('');
+  const [proofImage, setProofImage] = useState<string | null>(null);
 
-  const roomId = route?.params?.roomId; // Lấy roomId từ route.params
+  const roomId = route?.params?.roomId;
 
   useEffect(() => {
     if (roomId) {
@@ -72,6 +83,70 @@ const PlaceDetail = ({navigation, route}: any) => {
     );
   }
 
+  const handleSelectImage = (setter: (uri: string | null) => void) => {
+    launchImageLibrary({mediaType: 'photo'}, response => {
+      if (response.assets && response.assets.length > 0) {
+        setter(response.assets[0].uri);
+      }
+    });
+  };
+
+  const handleConfirmDeposit = async () => {
+    if (
+      !depositorName.trim() ||
+      !depositorPhone.trim() ||
+      !depositorCCCD ||
+      !proofImage
+    ) {
+      Alert.alert('Lỗi', 'Vui lòng điền đầy đủ thông tin và tải lên hình ảnh.');
+      return;
+    }
+
+    try {
+      const proofFileName = `deposit_proof_${Date.now()}.jpg`;
+      const cccdFileName = `cccd_${Date.now()}.jpg`;
+
+      const proofRef = storage().ref(`deposits/${proofFileName}`);
+      const cccdRef = storage().ref(`deposits/${cccdFileName}`);
+
+      await proofRef.putFile(proofImage);
+      await cccdRef.putFile(depositorCCCD);
+
+      const proofImageUrl = await proofRef.getDownloadURL();
+      const cccdImageUrl = await cccdRef.getDownloadURL();
+
+      const db = getDatabase();
+      const customerRef = ref(db, `/customers`);
+      const newCustomerRef = push(customerRef);
+
+      // Lưu thông tin khách hàng vào cột `customers`
+      await set(newCustomerRef, {
+        id: newCustomerRef.key,
+        roomId: roomId,
+        depositorName,
+        depositorPhone,
+        depositorCCCD: cccdImageUrl,
+        depositorImage: proofImageUrl,
+        depositorNote,
+        createdAt: Date.now(),
+      });
+
+      // Cập nhật trạng thái phòng
+      const roomRef = ref(db, `/rooms/${roomId}`);
+      await update(roomRef, {
+        isDeposited: true,
+        status: 'Đã đặt cọc',
+      });
+
+      Alert.alert('Thành công', 'Đặt cọc thành công!');
+      setIsDepositModalVisible(false);
+      setRoom({...room, isDeposited: true, status: 'Đã đặt cọc'});
+    } catch (error) {
+      console.error('Lỗi khi đặt cọc:', error);
+      Alert.alert('Lỗi', 'Không thể đặt cọc phòng.');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView style={styles.container}>
@@ -101,7 +176,6 @@ const PlaceDetail = ({navigation, route}: any) => {
         </ImageBackground>
 
         {/* Thông tin chi tiết */}
-
         <View style={styles.detailsContainer}>
           <TextComponent
             text={`Giá: ${room.price.toLocaleString()} VNĐ/tháng`}
@@ -129,6 +203,7 @@ const PlaceDetail = ({navigation, route}: any) => {
             color={appColors.text}
             styles={styles.address}
           />
+
           <SpaceComponent height={20} />
           <TextComponent
             title
@@ -148,23 +223,117 @@ const PlaceDetail = ({navigation, route}: any) => {
             ))}
           </View>
           <View>
-            <ButtonComponent
-              text="Liên hệ với chủ nhà"
-              type="primary"
-              onPress={() => {
-                // Xử lý khi nhấn nút liên hệ
-                console.log('Liên hệ với chủ nhà');
-              }}
-              color={appColors.tomato}
-              styles={{
-                marginTop: 20,
-                padding: 10,
-                borderRadius: 8,
-              }}
-            />
+            {room.isDeposited ? (
+              <TextComponent
+                text="Phòng này đã được đặt cọc"
+                size={16}
+                color={appColors.gray}
+                styles={{marginTop: 20, textAlign: 'center'}}
+              />
+            ) : (
+              <>
+                <ButtonComponent
+                  text="Liên hệ với chủ nhà"
+                  type="primary"
+                  onPress={() => {
+                    Alert.alert(
+                      'Thông tin chủ nhà',
+                      `Chủ trọ: ${room.ownerName}\nSố điện thoại: ${room.ownerPhone}`,
+                      [{text: 'Đóng', style: 'cancel'}],
+                    );
+                  }}
+                  color={appColors.tomato}
+                  styles={{
+                    marginTop: 20,
+                    padding: 10,
+                    borderRadius: 8,
+                  }}
+                />
+                <ButtonComponent
+                  text="Đặt cọc"
+                  type="primary"
+                  onPress={() => setIsDepositModalVisible(true)}
+                  color={appColors.primary}
+                  styles={{
+                    marginTop: 10,
+                    padding: 10,
+                    borderRadius: 8,
+                  }}
+                />
+              </>
+            )}
           </View>
         </View>
       </ScrollView>
+
+      {/* Modal đặt cọc */}
+      <Modal
+        visible={isDepositModalVisible}
+        animationType="slide"
+        onRequestClose={() => setIsDepositModalVisible(false)}>
+        <View style={styles.modalContainer}>
+          <TextComponent
+            text="Thông tin đặt cọc"
+            size={18}
+            styles={styles.modalTitle}
+          />
+          {/* Hiển thị thông tin chủ phòng */}
+          <TextComponent
+            text={`Chủ phòng: ${room.ownerName}`}
+            size={16}
+            styles={{marginBottom: 10}}
+          />
+          <TextComponent
+            text={`Số tài khoản: ${room.ownerBankAccount}`}
+            size={16}
+            styles={{marginBottom: 20}}
+          />
+          {/* Các input để nhập thông tin */}
+          <InputComponent
+            placeholder="Họ và tên"
+            value={depositorName}
+            onChange={setDepositorName}
+          />
+          <InputComponent
+            placeholder="Số điện thoại"
+            value={depositorPhone}
+            onChange={setDepositorPhone}
+            keyboardType="phone-pad"
+          />
+          <InputComponent
+            placeholder="Ghi chú"
+            value={depositorNote}
+            onChange={setDepositorNote}
+            multiline
+          />
+          <ButtonComponent
+            text={depositorCCCD ? 'Hình CCCD đã chọn' : 'Tải lên hình CCCD'}
+            onPress={() => handleSelectImage(setDepositorCCCD)}
+            type="primary"
+            styles={styles.uploadButton}
+          />
+          <ButtonComponent
+            text={
+              proofImage ? 'Hình biên lai đã chọn' : 'Tải lên hình biên lai'
+            }
+            onPress={() => handleSelectImage(setProofImage)}
+            type="primary"
+            styles={styles.uploadButton}
+          />
+          <ButtonComponent
+            text="Xác nhận đặt cọc"
+            onPress={handleConfirmDeposit}
+            type="primary"
+            styles={styles.confirmButton}
+          />
+          <ButtonComponent
+            text="Hủy"
+            onPress={() => setIsDepositModalVisible(false)}
+            type="text"
+            styles={styles.cancelButton}
+          />
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -228,6 +397,9 @@ const styles = StyleSheet.create({
   address: {
     marginTop: 10,
   },
+  ownerInfo: {
+    marginTop: 10,
+  },
   sectionTitle: {
     fontWeight: 'bold',
     marginBottom: 10,
@@ -243,6 +415,31 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.gray3,
     marginRight: 10,
     marginBottom: 10,
+  },
+  modalContainer: {
+    flex: 1,
+    padding: 20,
+    justifyContent: 'center',
+    backgroundColor: appColors.white,
+  },
+  modalTitle: {
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  uploadButton: {
+    marginTop: 10,
+    padding: 10,
+    borderRadius: 8,
+  },
+  confirmButton: {
+    marginTop: 20,
+    padding: 10,
+    borderRadius: 8,
+  },
+  cancelButton: {
+    marginTop: 10,
+    padding: 10,
+    borderRadius: 8,
   },
 });
 

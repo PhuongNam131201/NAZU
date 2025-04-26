@@ -2,13 +2,13 @@ import React from 'react';
 import {createStackNavigator} from '@react-navigation/stack';
 import HomeScreen from '../screens/home/HomeScreen';
 import PlaceDetail from '../screens/place/PlaceDetail';
-import AdminApprovalScreen from '../screens/AdminApprovalScreen';
 
 export type RootStackParamList = {
   Home: undefined;
-  PlaceDetail: {roomId: string}; // Định nghĩa tham số cho PlaceDetail
+  PlaceDetail: {roomId: string};
+  DepositScreen: {roomId: string; price: number; ownerBankAccount: string}; // Định nghĩa tham số cho DepositScreen
   MapScreen: undefined;
-  AdminApproval: undefined; // Thêm màn hình AdminApproval
+  AdminApproval: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -18,8 +18,8 @@ const AppNavigator = () => {
     <Stack.Navigator screenOptions={{headerShown: false}}>
       <Stack.Screen name="Home" component={HomeScreen} />
       <Stack.Screen name="PlaceDetail" component={PlaceDetail} />
-      <Stack.Screen name="AdminApproval" component={AdminApprovalScreen} />{' '}
-      {/* Thêm màn hình */}
+
+      {/* Đảm bảo màn hình được khai báo */}
     </Stack.Navigator>
   );
 };
