@@ -95,7 +95,7 @@ const HomeScreen = ({navigation}: any) => {
   }, [currenLocation]);
 
   const reverseGeoCode = async ({lat, lon}: {lat: number; lon: number}) => {
-    const api = `https://revgeocode.search.hereapi.com/v1/revgeocode?at=${lat},${lon}&lang=vi-VI&apiKey=6dVvU0jSlISYFm251QMhjRjMAwHvOllgnQhW_Sq3PBE`;
+    const api = `chỗ để API`;
     try {
       const res = await axios(api);
       if (res && res.status == 200 && res.data) {
