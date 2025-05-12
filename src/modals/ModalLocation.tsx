@@ -71,7 +71,7 @@ const ModalLocation = ({visible, onClose, onSelect}: Props) => {
           const res = await Axios.get(
             `https://rsapi.goong.io/Geocode?address=${encodeURIComponent(
               addressSelected,
-            )}&api_key=l1ksnSWo8IdMDKkileQQ9FbqkZCO0ZgEjakVSAvK`,
+            )}&api_key=api`,
           );
           if (res.data && res.data.results.length > 0) {
             const location = res.data.results[0].geometry.location;
@@ -113,7 +113,7 @@ const ModalLocation = ({visible, onClose, onSelect}: Props) => {
   };
 
   const handleSearchLocation = async () => {
-    const api = `https://autocomplete.search.hereapi.com/v1/autocomplete?q=${searchKey}&limit=20&apiKey=6dVvU0jSlISYFm251QMhjRjMAwHvOllgnQhW_Sq3PBE`;
+    const api = `https://autocomplete.search.hereapi.com/v1/autocomplete?q=${searchKey}&limit=20&apiKey=api`;
     try {
       setIsLoading(true);
       const res = await axios.get(api);
